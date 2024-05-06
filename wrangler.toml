@@ -1,0 +1,6 @@
+name = "fastapi"
+compatibility_date = "2024-05-06"
+
+[vars]
+UPSTASH_REDIS_REST_TOKEN = "AbxGAAIncDEzMzBiZmVhYzBkZjM0YTFkYmI1OTM1MjEwYjFlYmU1NXAxNDgxOTg"
+UPSTASH_REDIS_REST_URL = "https://guiding-stingray-48198.upstash.io"
