@@ -13,38 +13,56 @@ type EnvConfig = {
 };
 
 app.get("/search", async (c) => {
-  const { UPSTASH_REDIS_REST_TOKEN, UPSTASH_REDIS_REST_URL } =
-    env<EnvConfig>(c);
+  try {
+    const { UPSTASH_REDIS_REST_TOKEN, UPSTASH_REDIS_REST_URL } =
+      env<EnvConfig>(c);
 
-  const redis = new Redis({
-    token: UPSTASH_REDIS_REST_TOKEN,
-    url: UPSTASH_REDIS_REST_URL,
-  });
+    const start = performance.now();
+    // -----------------------------------------------------------------
 
-  const query = c.req.query("q");
+    const redis = new Redis({
+      token: UPSTASH_REDIS_REST_TOKEN,
+      url: UPSTASH_REDIS_REST_URL,
+    });
 
-  if (!query) {
-    return c.json({ message: "Invalid search query" }, { status: 400 });
-  }
+    const query = c.req.query("q");
 
-  const res = [];
-  const rank = await redis.zrank("terms", query);
+    if (!query) {
+      return c.json({ message: "Invalid search query" }, { status: 400 });
+    }
 
-  if (rank !== null && rank !== undefined) {
-    const temp = await redis.zrange<string[]>("terms", rank, rank + 100);
+    const res = [];
+    const rank = await redis.zrank("terms", query);
 
-    for (const el of temp) {
-      if (!el.startsWith(query)) {
-        break;
-      }
+    if (rank !== null && rank !== undefined) {
+      const temp = await redis.zrange<string[]>("terms", rank, rank + 100);
 
-      if (el.endsWith("*")) {
-        res.push(el.substring(0, el.length - 1));
+      for (const el of temp) {
+        if (!el.startsWith(query)) {
+          break;
+        }
+
+        if (el.endsWith("*")) {
+          res.push(el.substring(0, el.length - 1));
+        }
       }
     }
-  }
 
-  return c.json({});
+    // ---------------------------------------
+    const end = performance.now();
+
+    return c.json({
+      results: res,
+      duration: end - start,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return c.json(
+      { results: [], message: "Something went wrong." },
+      { status: 500 }
+    );
+  }
 });
 
 export const GET = handle(app);
